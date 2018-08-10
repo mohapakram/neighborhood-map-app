@@ -1,0 +1,28 @@
+body{
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+.app{
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+.search-list{
+  z-index: 1;
+  position: fixed;
+  top: 5px;
+  left: 5px;
+  background-color: white;
+  padding:10px;
+}
+.places-list{
+  list-style: none;
+}
+.places-list li {
+  align-items: center;
+  text-align:center;
+  border: 1px black solid;
+  margin:4%;
+}
