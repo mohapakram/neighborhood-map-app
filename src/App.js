@@ -1,10 +1,12 @@
 import React  from 'react';
 import SearchList from './SearchList'
+// import Fuse from 'fuse';
 import './App.css';
 
 class App extends React.Component {
 
   state={
+    authFailure:false,
     places:[
          {title: 'Park Ave Penthouse', location: {lat: 40.7713024, lng: -73.9632393}},
          {title: 'Chelsea Loft', location: {lat: 40.7444883, lng: -73.9949465}},
@@ -13,13 +15,23 @@ class App extends React.Component {
          {title: 'TriBeCa Artsy Bachelor Pad', location: {lat: 40.7195264, lng: -74.0089934}},
          {title: 'Chinatown Homey Space', location: {lat: 40.7180628, lng: -73.9961237}}
        ],
+       filter:[],
+       filtered:false,
        map:{},
        markers:[],
-       infoWindow:{}
+       infoWindow:{},
+       query:""
   }
 
   componentDidMount(){
    window.initMap = this.initMap;
+
+   window.gm_authFailure = ()=> {
+     this.setState({
+       authFailure:true
+     });
+   };
+
    // Asynchronously load the Google Maps script, passing in the callback reference
    loadMapJS(
      "https://maps.googleapis.com/maps/api/js?key=AIzaSyCU348OAoZQOxoODvDfrQee3Zg6fqPlv6g&callback=initMap"
@@ -62,12 +74,22 @@ class App extends React.Component {
     this.openInfoWindow(place.marker);
   }
 
-   loadJS(src) {
-      let ref = window.document.getElementsByTagName("script")[0];
-      let script = window.document.createElement("script");
-      script.src = src;
-      script.async = true;
-      ref.parentNode.insertBefore(script, ref);
+  filter=(query)=>{
+    console.log(query , query.length);
+     if(!query){
+       this.setState({
+         filtered:false
+       });
+     }
+     if(query.length){
+       this.setState({query:query.trim()});
+       let filter =
+       this.setState({
+         filter:filter,
+
+         filtered:true
+       });
+     }
   }
 
   openInfoWindow(marker){
@@ -81,13 +103,26 @@ class App extends React.Component {
   }
 
   render() {
+    let authFailure = this.state.authFailure;
     return (
       <div className="App">
-      <SearchList
-      openInfoWindow={this.openInfoWindow}
-      places={this.state.places}
-      updateCenter={this.updateCenter}/>
-      <div id="map" />
+      {
+        authFailure ? (
+          <h1 className="error-msg"> error <span>:</span> authFailure</h1>
+        ):(
+          <div>
+          <SearchList
+          filter={this.filter}
+          openInfoWindow={this.openInfoWindow}
+          places={
+            this.state.filtered ? (this.state.filter):(this.state.places)
+          }
+          updateCenter={this.updateCenter}/>
+          <div id="map" />
+          </div>
+        )
+      }
+
       </div>
     );
   }
@@ -101,4 +136,4 @@ function loadMapJS(src) {
   script.src = src;
   script.async = true;
   ref.parentNode.insertBefore(script, ref);
-}
+};

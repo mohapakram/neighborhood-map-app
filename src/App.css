@@ -26,3 +26,7 @@ body{
   border: 1px black solid;
   margin:4%;
 }
+.error-msg{
+  text-align: center;
+  margin: 20%;
+}

@@ -7,6 +7,11 @@ render() {
   return(
     <div className="search-list">
       <input
+        onChange={
+          (e)=>{
+            this.props.filter(e.target.value);
+          }
+        }
         role="search"
         className="search-input"
         type="text"
