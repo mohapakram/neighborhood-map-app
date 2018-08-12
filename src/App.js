@@ -1,6 +1,6 @@
 import React  from 'react';
-import SearchList from './SearchList'
-// import Fuse from 'fuse';
+import SearchList from './SearchList';
+import escapeRegExp from 'escape-string-regexp';
 import './App.css';
 
 class App extends React.Component {
@@ -8,15 +8,13 @@ class App extends React.Component {
   state={
     authFailure:false,
     places:[
-         {title: 'Park Ave Penthouse', location: {lat: 40.7713024, lng: -73.9632393}},
-         {title: 'Chelsea Loft', location: {lat: 40.7444883, lng: -73.9949465}},
-         {title: 'Union Square Open Floor Plan', location: {lat: 40.7347062, lng: -73.9895759}},
-         {title: 'East Village Hip Studio', location: {lat: 40.7281777, lng: -73.984377}},
-         {title: 'TriBeCa Artsy Bachelor Pad', location: {lat: 40.7195264, lng: -74.0089934}},
-         {title: 'Chinatown Homey Space', location: {lat: 40.7180628, lng: -73.9961237}}
-       ],
-       filter:[],
-       filtered:false,
+         {title: "Library of Alexandria" , search: "Library_of_Alexandria" , location : {lat:31.209192 , lng:29.909255}},
+         {title: 'Great Pyramid of Giza', search: 'Great_Pyramid_of_Giza' , location: {lat: 29.977510, lng:31.132453}},
+         {title: 'Abu Simbel temples', search: 'Abu_Simbel_temples', location: {lat: 22.337490, lng: 31.625799}},
+         {title: 'Karnak Temple Complex', search: 'Karnak Temple_Complex', location: {lat: 25.719144, lng: 32.657227}},
+         {title: 'Abydos', search : 'Abydos' ,location: {lat: 26.184853, lng: 31.922815}},
+         {title: 'The Great Sphinx of Giza', search: 'Great_Sphinx_of_Giza' , location: {lat:29.975557, lng: 31.137482}}
+        ],
        map:{},
        markers:[],
        infoWindow:{},
@@ -38,26 +36,20 @@ class App extends React.Component {
    );
   }
 
-  initMap = ()=>{
+  initMap = ()=> {
     let bounds = new window.google.maps.LatLngBounds();
     let infoWindow = new window.google.maps.InfoWindow();
     let mapDiv = document.getElementById("map");
     mapDiv.style.height = window.innerHeight + "px";
-    let map = new window.google.maps.Map(mapDiv, {
-      center:this.state.center,
-      zoom:5
-    });
+    let map = new window.google.maps.Map(mapDiv);
     let markers = [];
-    this.setState({
-      map:map,
-      infoWindow:infoWindow
-    });
     this.state.places.map((place)=>{
       let marker = new window.google.maps.Marker({
         map:map,
         position:place.location,
         title:place.title
       });
+      marker.search = place.search;
       markers.push(marker);
       place.marker = marker;
       bounds.extend(marker.position);
@@ -65,6 +57,11 @@ class App extends React.Component {
         this.openInfoWindow(marker);
       });
       return place;
+    });
+    this.setState({
+      map:map,
+      infoWindow:infoWindow,
+      markers:markers
     });
     map.fitBounds(bounds);
   }
@@ -75,35 +72,69 @@ class App extends React.Component {
   }
 
   filter=(query)=>{
-    console.log(query , query.length);
-     if(!query){
-       this.setState({
-         filtered:false
-       });
-     }
-     if(query.length){
-       this.setState({query:query.trim()});
-       let filter =
-       this.setState({
-         filter:filter,
-
-         filtered:true
-       });
-     }
+     this.setState({ query: query.trim() });
   }
 
-  openInfoWindow(marker){
-    if(this.state.infoWindow.marker !== null){
-      this.state.infoWindow.setContent(`<div>${marker.title}</div>`);
-      this.state.infoWindow.open(this.state.map , marker);
-    }
-     this.state.infoWindow.addListener("closeclick", ()=>{
-     this.state.infoWindow.setContent(null);
+  hideMarkers=()=>{
+   this.state.markers.map((marker)=>{
+     marker.setMap(null);
+     return marker;
    });
   }
 
+  showCurrentMarkers(list){
+    let bounds = new window.google.maps.LatLngBounds();
+    list.map((place)=>{
+      place.marker.setMap(this.state.map);
+      bounds.extend(place.marker.position);
+      return place;
+    });
+    if(list.length > 1){
+          this.state.map.fitBounds(bounds);
+    }
+
+  }
+
+  showMarkers=()=>{
+    this.state.markers.map((marker)=>{
+      marker.setMap(this.state.map);
+      return marker;
+    });
+  }
+
+  openInfoWindow(marker){
+    fetch("https://en.wikipedia.org/w/api.php?&origin=*&action=opensearch&search="+marker.search)
+    .then((resp)=> {
+        return resp.json()
+    }).then((data)=>{
+      console.log(data);
+      if(this.state.infoWindow.marker !== null){
+        this.state.infoWindow.setContent(`<div>${data[2][0]}</div>`);
+        this.state.infoWindow.open(this.state.map , marker);
+      }
+       this.state.infoWindow.addListener("closeclick", ()=>{
+       this.state.infoWindow.setContent(null);
+     });
+   }).catch((error)=>{
+      console.log(error);
+      this.state.infoWindow.setContent(`<div>error loading content</div>`);
+   });
+  }
+
+
+
   render() {
-    let authFailure = this.state.authFailure;
+    const  { places , query , authFailure } = this.state;
+    let list;
+    if (query) {
+     const match = new RegExp(escapeRegExp(query), 'i');
+     list = places.filter((place) => match.test(place.title));
+     this.hideMarkers();
+     this.showCurrentMarkers(list);
+     } else {
+     list = places;
+     this.showMarkers();
+   }
     return (
       <div className="App">
       {
@@ -114,9 +145,7 @@ class App extends React.Component {
           <SearchList
           filter={this.filter}
           openInfoWindow={this.openInfoWindow}
-          places={
-            this.state.filtered ? (this.state.filter):(this.state.places)
-          }
+          places={list}
           updateCenter={this.updateCenter}/>
           <div id="map" />
           </div>
