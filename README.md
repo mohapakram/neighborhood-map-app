@@ -3,9 +3,9 @@ list of my most favorite places in egypt.
 
 ## development specs
 
-### framework `react` 
+### framework `react`
 
-###dependencies
+### dependencies
 `"escape-string-regexp": "^1.0.5",`
 `"react": "^16.4.2"`
 `"react-dom": "^16.4.2"`
